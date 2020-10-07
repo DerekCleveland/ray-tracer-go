@@ -13,3 +13,16 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# IDE
+.idea/
+
+# Mac files
+.DS_Store
+
+# Profiling files
+cpu.prof
+mem.prof
+
+# Ignore directories
+images/
