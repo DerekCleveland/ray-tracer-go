@@ -59,6 +59,7 @@ func rayTracer() error {
 			ir := int(255.99 * vec.X)
 			ig := int(255.99 * vec.Y)
 			ib := int(255.99 * vec.Z)
+
 			f.WriteString(fmt.Sprintf("%d %d %d\n", ir, ig, ib))
 		}
 	}
