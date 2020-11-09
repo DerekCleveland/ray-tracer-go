@@ -8,7 +8,7 @@ type Metal struct {
 
 // Scatter implementation
 func (m Metal) Scatter(input Ray, hit HitRecord) (bool, Ray) {
-	direction := reflect(input.Direction, hit.Normal)
+	direction := input.Direction.Reflect(hit.Normal)
 	bouncedRay := Ray{hit.Point, direction.Add(RandomInUnitSphere().Scale(m.Fuzz))}
 	bounced := direction.Dot(hit.Normal) > 0
 	return bounced, bouncedRay
@@ -17,10 +17,4 @@ func (m Metal) Scatter(input Ray, hit HitRecord) (bool, Ray) {
 // Albedo implementation
 func (m Metal) Albedo() Vector {
 	return m.A
-}
-
-// reflect adds the reflection property to metal materials
-func reflect(v Vector, n Vector) Vector {
-	b := 2 * v.Dot(n)
-	return v.Subtract(n.Scale(b))
 }

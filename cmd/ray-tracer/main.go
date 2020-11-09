@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"ray-tracer-go/pkg/camera"
 	"ray-tracer-go/pkg/geometry"
 	"ray-tracer-go/pkg/geometry/shape"
 	"time"
@@ -50,8 +51,8 @@ func rayTracer() error {
 	log.Println("Created file at", filenameFullPath)
 
 	// Defines the resolution of the image
-	nx := 200
-	ny := 100
+	nx := 400
+	ny := 200
 	// Number of samples we take for AA. The larger the value the smoother the transition but longer the processing time
 	ns := 100
 	// TODO determine what this value is for
@@ -59,14 +60,21 @@ func rayTracer() error {
 	f.WriteString(fmt.Sprintf("P3\n%d %d\n255\n", nx, ny))
 
 	// Create a new camera
-	camera := geometry.NewCamera()
+	camera := camera.NewCamera()
 
 	// Setup world
+	// Brownish sphere
 	sphere := shape.Sphere{
 		Center:   geometry.Vector{X: 0, Y: 0, Z: -1},
 		Radius:   0.5,
 		Material: geometry.Lambertian{A: geometry.Vector{X: 0.8, Y: 0.3, Z: 0.3}},
 	}
+	// Blue sphere
+	// sphere := shape.Sphere{
+	// 	Center:   geometry.Vector{X: 0, Y: 0, Z: -1},
+	// 	Radius:   0.5,
+	// 	Material: geometry.Lambertian{A: geometry.Vector{X: 0.1, Y: 0.2, Z: 0.5}},
+	// }
 
 	floor := shape.Sphere{
 		Center:   geometry.Vector{X: 0, Y: -100.5, Z: -1},
@@ -77,24 +85,35 @@ func rayTracer() error {
 	metalSphere1 := shape.Sphere{
 		Center:   geometry.Vector{X: 1, Y: 0, Z: -1},
 		Radius:   0.5,
-		Material: geometry.Metal{A: geometry.Vector{X: 0.8, Y: 0.6, Z: 0.2}},
+		Material: geometry.Metal{A: geometry.Vector{X: 0.8, Y: 0.6, Z: 0.2}, Fuzz: 0.3},
 	}
 
-	metalSphere2 := shape.Sphere{
+	// metalSphere2 := shape.Sphere{
+	// 	Center:   geometry.Vector{X: -1, Y: 0, Z: -1},
+	// 	Radius:   0.5,
+	// 	Material: geometry.Metal{A: geometry.Vector{X: 0.8, Y: 0.8, Z: 0.8}, Fuzz: 0.3},
+	// }
+
+	dielectricSphere := shape.Sphere{
 		Center:   geometry.Vector{X: -1, Y: 0, Z: -1},
 		Radius:   0.5,
-		Material: geometry.Metal{A: geometry.Vector{X: 0.8, Y: 0.8, Z: 0.8}},
+		Material: geometry.Dielectric{RefIndex: 1.5},
+	}
+
+	dielectricSphere2 := shape.Sphere{
+		Center:   geometry.Vector{X: -1, Y: 0, Z: -1},
+		Radius:   -0.45,
+		Material: geometry.Dielectric{RefIndex: 1.5},
 	}
 
 	world := geometry.World{}
 
-	// world := geometry.World{
-	// 	Elements: []geometry.Hitable{&sphere, &floor},
-	// }
 	world.Add(&sphere)
 	world.Add(&floor)
 	world.Add(&metalSphere1)
-	world.Add(&metalSphere2)
+	//world.Add(&metalSphere2)
+	world.Add(&dielectricSphere)
+	world.Add(&dielectricSphere2)
 
 	for j := ny - 1; j >= 0; j-- {
 		for i := 0; i < nx; i++ {

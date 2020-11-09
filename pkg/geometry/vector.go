@@ -84,3 +84,28 @@ func (v1 Vector) Normalize() Vector {
 	inverse := 1.0 / v1.Length()
 	return Vector{v1.X * inverse, v1.Y * inverse, v1.Z * inverse}
 }
+
+// Refract returns back weather the vector was refracted as well as what it is
+func (v1 Vector) Refract(v2 Vector, n float64) (bool, Vector) {
+	unitVector1 := v1.Normalize()
+	unitVector2 := v2.Normalize()
+
+	dt := unitVector1.Dot(unitVector2)
+
+	discriminant := 1.0 - n*n*(1-dt*dt)
+
+	if discriminant > 0 {
+		a := unitVector1.Subtract(v2.Scale(dt)).Scale(n)
+		b := unitVector2.Scale(math.Sqrt(discriminant))
+
+		return true, a.Subtract(b)
+	}
+
+	return false, Vector{}
+}
+
+// Reflect adds the reflection ability to a vector
+func (v1 Vector) Reflect(v2 Vector) Vector {
+	b := 2 * v1.Dot(v2)
+	return v1.Subtract(v2.Scale(b))
+}
