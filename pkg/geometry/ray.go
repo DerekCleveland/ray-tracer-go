@@ -7,6 +7,6 @@ type Ray struct {
 }
 
 // PointOnRay provides the computation of a point along the ray
-func (r *Ray) PointOnRay(t float64) Vector {
+func (r Ray) PointOnRay(t float64) Vector {
 	return r.Origin.Add(r.Direction.Scale(t))
 }

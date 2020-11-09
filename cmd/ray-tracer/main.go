@@ -63,18 +63,38 @@ func rayTracer() error {
 
 	// Setup world
 	sphere := shape.Sphere{
-		Center: geometry.Vector{X: 0, Y: 0, Z: -1},
-		Radius: 0.5,
+		Center:   geometry.Vector{X: 0, Y: 0, Z: -1},
+		Radius:   0.5,
+		Material: geometry.Lambertian{A: geometry.Vector{X: 0.8, Y: 0.3, Z: 0.3}},
 	}
 
 	floor := shape.Sphere{
-		Center: geometry.Vector{X: 0, Y: -100.5, Z: -1},
-		Radius: 100,
+		Center:   geometry.Vector{X: 0, Y: -100.5, Z: -1},
+		Radius:   100,
+		Material: geometry.Lambertian{A: geometry.Vector{X: 0.8, Y: 0.8, Z: 0.0}},
 	}
 
-	world := geometry.World{
-		Elements: []geometry.Hitable{&sphere, &floor},
+	metalSphere1 := shape.Sphere{
+		Center:   geometry.Vector{X: 1, Y: 0, Z: -1},
+		Radius:   0.5,
+		Material: geometry.Metal{A: geometry.Vector{X: 0.8, Y: 0.6, Z: 0.2}},
 	}
+
+	metalSphere2 := shape.Sphere{
+		Center:   geometry.Vector{X: -1, Y: 0, Z: -1},
+		Radius:   0.5,
+		Material: geometry.Metal{A: geometry.Vector{X: 0.8, Y: 0.8, Z: 0.8}},
+	}
+
+	world := geometry.World{}
+
+	// world := geometry.World{
+	// 	Elements: []geometry.Hitable{&sphere, &floor},
+	// }
+	world.Add(&sphere)
+	world.Add(&floor)
+	world.Add(&metalSphere1)
+	world.Add(&metalSphere2)
 
 	for j := ny - 1; j >= 0; j-- {
 		for i := 0; i < nx; i++ {
@@ -86,13 +106,14 @@ func rayTracer() error {
 				var v float64 = (float64(j) + rand.Float64()) / float64(ny)
 
 				r := camera.RayAt(u, v)
-				// col := r.Color()
-				col := color(&r, &world)
+				col := color(r, &world, 0)
 				rgb = rgb.Add(col)
 			}
 
-			// TODO this might be wrong? I think my math checks out though
-			rgb = rgb.Scale((1/float64(ns)))
+			// Scale rgb vector by 1/ns
+			rgb = rgb.Scale((1 / float64(ns)))
+			// Take the square root of each column of rgb vector
+			rgb = geometry.Vector{X: math.Sqrt(rgb.X), Y: math.Sqrt(rgb.Y), Z: math.Sqrt(rgb.Z)}
 
 			// Color intensity
 			ir := int(c * rgb.X)
@@ -107,12 +128,22 @@ func rayTracer() error {
 }
 
 // color returns a vector...assumbably to change the color...but not sure how yet
-func color(r *geometry.Ray, world geometry.Hitable) geometry.Vector {
+func color(r geometry.Ray, world geometry.Hitable, depth int) geometry.Vector {
 	hit, record := world.CheckForHit(r, 0.001, math.MaxFloat64)
 
+	// if hit {
+	// 	target := record.Point.Add(record.Normal).Add(RandomInUnitSphere())
+	// 	return color(&geometry.Ray{Origin: record.Point, Direction: target.Subtract(record.P)}, world).Scale(0.5)
+	// }
+
 	if hit {
-		target := record.P.Add(record.Normal).Add(RandomInUnitSphere())
-		return color(&geometry.Ray{Origin: record.P, Direction: target.Subtract(record.P)}, world).Scale(0.5)
+		if depth < 50 {
+			scattered, scatteredRay := record.Scatter(r, record)
+			if scattered {
+				newColor := color(scatteredRay, world, depth+1)
+				return record.Material.Albedo().Multiply(newColor)
+			}
+		}
 	}
 
 	// Make unit vector so y is between -1.0 and 1.0
@@ -122,16 +153,4 @@ func color(r *geometry.Ray, world geometry.Hitable) geometry.Vector {
 
 	// The two vectors here are what creates the sky(Blue to white gradient of the background)
 	return geometry.Vector{X: 1.0, Y: 1.0, Z: 1.0}.Scale(1.0 - t).Add(geometry.Vector{X: 0.5, Y: 0.7, Z: 1.0}.Scale(t))
-}
-
-// RandomInUnitSphere creates a random vector. Scales it and then subtracts a (1,1,1) vector from it and then checks its squared length
-func RandomInUnitSphere() geometry.Vector {
-	for {
-		r := geometry.Vector{X: rand.Float64(), Y: rand.Float64(), Z: rand.Float64()}
-		p := r.Scale(2.0)
-		p = p.Subtract(geometry.Vector{X: 1, Y: 1, Z: 1})
-		if p.SquaredLength() >= 1.0 {
-			return p
-		}
-	}
 }

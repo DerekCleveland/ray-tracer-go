@@ -3,6 +3,7 @@ package geometry
 import (
 	"fmt"
 	"math"
+	"math/rand"
 )
 
 // Vector is a struct defining an object that has both a magnitude and a direction
@@ -13,8 +14,20 @@ type Vector struct {
 }
 
 // SquaredLength takes in a vector and squares it
-func (v Vector) SquaredLength() float64 {
-	return v.X * v.X + v.Y * v.Y + v.Z * v.Z
+func (v1 Vector) SquaredLength() float64 {
+	return v1.X*v1.X + v1.Y*v1.Y + v1.Z*v1.Z
+}
+
+// RandomInUnitSphere creates a random vector. Scales it and then subtracts a (1,1,1) vector from it and then checks its squared length
+func RandomInUnitSphere() Vector {
+	for {
+		r := Vector{X: rand.Float64(), Y: rand.Float64(), Z: rand.Float64()}
+		p := r.Scale(2.0)
+		p = p.Subtract(Vector{X: 1, Y: 1, Z: 1})
+		if p.SquaredLength() >= 1.0 {
+			return p
+		}
+	}
 }
 
 // ToString takes a vector value receiver and returns it as a string
