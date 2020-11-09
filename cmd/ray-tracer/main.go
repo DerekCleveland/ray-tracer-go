@@ -107,11 +107,12 @@ func rayTracer() error {
 }
 
 // color returns a vector...assumbably to change the color...but not sure how yet
-func color(r *geometry.Ray, h geometry.Hitable) geometry.Vector {
-	hit, record := h.CheckForHit(r, 0.0, math.MaxFloat64)
+func color(r *geometry.Ray, world geometry.Hitable) geometry.Vector {
+	hit, record := world.CheckForHit(r, 0.001, math.MaxFloat64)
 
 	if hit {
-		return geometry.Vector{X: record.Normal.X + 1, Y: record.Normal.Y + 1, Z: record.Normal.Z + 1}.Scale(0.5) 
+		target := record.P.Add(record.Normal).Add(RandomInUnitSphere())
+		return color(&geometry.Ray{Origin: record.P, Direction: target.Subtract(record.P)}, world).Scale(0.5)
 	}
 
 	// Make unit vector so y is between -1.0 and 1.0
@@ -121,4 +122,16 @@ func color(r *geometry.Ray, h geometry.Hitable) geometry.Vector {
 
 	// The two vectors here are what creates the sky(Blue to white gradient of the background)
 	return geometry.Vector{X: 1.0, Y: 1.0, Z: 1.0}.Scale(1.0 - t).Add(geometry.Vector{X: 0.5, Y: 0.7, Z: 1.0}.Scale(t))
+}
+
+// RandomInUnitSphere creates a random vector. Scales it and then subtracts a (1,1,1) vector from it and then checks its squared length
+func RandomInUnitSphere() geometry.Vector {
+	for {
+		r := geometry.Vector{X: rand.Float64(), Y: rand.Float64(), Z: rand.Float64()}
+		p := r.Scale(2.0)
+		p = p.Subtract(geometry.Vector{X: 1, Y: 1, Z: 1})
+		if p.SquaredLength() >= 1.0 {
+			return p
+		}
+	}
 }

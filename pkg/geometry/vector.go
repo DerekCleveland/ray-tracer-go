@@ -12,6 +12,11 @@ type Vector struct {
 	Z float64
 }
 
+// SquaredLength takes in a vector and squares it
+func (v Vector) SquaredLength() float64 {
+	return v.X * v.X + v.Y * v.Y + v.Z * v.Z
+}
+
 // ToString takes a vector value receiver and returns it as a string
 // TODO probably better to just use another image format that handles float64
 func (v1 Vector) ToString() string {
