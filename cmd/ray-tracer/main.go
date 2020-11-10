@@ -51,8 +51,8 @@ func rayTracer() error {
 	log.Println("Created file at", filenameFullPath)
 
 	// Defines the resolution of the image
-	nx := 400
-	ny := 200
+	nx := 2560
+	ny := 1440
 	// Number of samples we take for AA. The larger the value the smoother the transition but longer the processing time
 	ns := 100
 	// TODO determine what this value is for
@@ -60,86 +60,97 @@ func rayTracer() error {
 	f.WriteString(fmt.Sprintf("P3\n%d %d\n255\n", nx, ny))
 
 	// Setup camera properties
-	lookFrom := geometry.Vector{X: 3, Y: 3, Z: 2}
-	lookAt := geometry.Vector{X: 0, Y: 0, Z: -1}
+	lookFrom := geometry.Vector{X: 13, Y: 2, Z: 3}
+	lookAt := geometry.Vector{X: 0, Y: 0, Z: 0}
 	vUp := geometry.Vector{X: 0, Y: 1, Z: 0}
 	focusDist := lookFrom.Subtract(lookAt).Length()
-	aperture := 2.0
+	aperture := 0.1
 
 	// Create a new camera
 	camera := camera.NewCamera(lookFrom, lookAt, vUp, 20, float64(nx)/float64(ny), aperture, focusDist)
 
-	// // Setup red and blue sphere
-	// radius := math.Cos(math.Pi/4)
-
-	// blueSphere := shape.Sphere{
-	// 	Center: geometry.Vector{X: -radius, Y: 0, Z: -1},
-	// 	Radius: radius,
-	// 	Material: geometry.Lambertian{A: geometry.Vector{X: 0, Y: 0, Z: 1}},
-	// }
-
-	// redSphere := shape.Sphere{
-	// 	Center: geometry.Vector{X: radius, Y: 0, Z: -1},
-	// 	Radius: radius,
-	// 	Material: geometry.Lambertian{A: geometry.Vector{X: 1, Y: 0, Z: 0}},
-	// }
-	// world := geometry.World{}
-
-	// world.Add(&blueSphere)
-	// world.Add(&redSphere)
-
-	// Setup world
-	// Brownish sphere
-	// sphere := shape.Sphere{
-	// 	Center:   geometry.Vector{X: 0, Y: 0, Z: -1},
-	// 	Radius:   0.5,
-	// 	Material: geometry.Lambertian{A: geometry.Vector{X: 0.8, Y: 0.3, Z: 0.3}},
-	// }
-	// Blue sphere
-	sphere := shape.Sphere{
-		Center:   geometry.Vector{X: 0, Y: 0, Z: -1},
-		Radius:   0.5,
-		Material: geometry.Lambertian{A: geometry.Vector{X: 0.1, Y: 0.2, Z: 0.5}},
-	}
-
-	floor := shape.Sphere{
-		Center:   geometry.Vector{X: 0, Y: -100.5, Z: -1},
-		Radius:   100,
-		Material: geometry.Lambertian{A: geometry.Vector{X: 0.8, Y: 0.8, Z: 0.0}},
-	}
-
-	metalSphere1 := shape.Sphere{
-		Center:   geometry.Vector{X: 1, Y: 0, Z: -1},
-		Radius:   0.5,
-		Material: geometry.Metal{A: geometry.Vector{X: 0.8, Y: 0.6, Z: 0.2}, Fuzz: 0.3},
-	}
-
-	// metalSphere2 := shape.Sphere{
-	// 	Center:   geometry.Vector{X: -1, Y: 0, Z: -1},
-	// 	Radius:   0.5,
-	// 	Material: geometry.Metal{A: geometry.Vector{X: 0.8, Y: 0.8, Z: 0.8}, Fuzz: 0.3},
-	// }
-
-	dielectricSphere := shape.Sphere{
-		Center:   geometry.Vector{X: -1, Y: 0, Z: -1},
-		Radius:   0.5,
-		Material: geometry.Dielectric{RefIndex: 1.5},
-	}
-
-	dielectricSphere2 := shape.Sphere{
-		Center:   geometry.Vector{X: -1, Y: 0, Z: -1},
-		Radius:   -0.45,
-		Material: geometry.Dielectric{RefIndex: 1.5},
-	}
-
 	world := geometry.World{}
 
-	world.Add(&sphere)
+	floor := shape.Sphere{
+		Center:   geometry.Vector{X: 0, Y: -1000, Z: 0},
+		Radius:   1000,
+		Material: geometry.Lambertian{A: geometry.Vector{X: 0.5, Y: 0.5, Z: 0.5}},
+	}
 	world.Add(&floor)
-	world.Add(&metalSphere1)
-	//world.Add(&metalSphere2)
-	world.Add(&dielectricSphere)
-	world.Add(&dielectricSphere2)
+
+	for a := -11; a < 11; a++ {
+		for b := -11; b < 11; b++ {
+			material := rand.Float64()
+
+			center := geometry.Vector{
+				X: float64(a) + 0.9*rand.Float64(),
+				Y: 0.2,
+				Z: float64(b) + 0.9*rand.Float64(),
+			}
+
+			if center.Subtract(geometry.Vector{X: 4, Y: 0.2, Z: 0}).Length() > 0.9 {
+				if material < 0.8 {
+					lambertian := shape.Sphere{
+						Center: geometry.Vector{X: center.X, Y: center.Y, Z: center.Z},
+						Radius: 0.2,
+						Material: geometry.Lambertian{A: geometry.Vector{
+							X: rand.Float64() * rand.Float64(),
+							Y: rand.Float64() * rand.Float64(),
+							Z: rand.Float64() * rand.Float64(),
+						}},
+					}
+
+					world.Add(&lambertian)
+				} else if material < 0.95 {
+					metal := shape.Sphere{
+						Center: geometry.Vector{X: center.X, Y: center.Y, Z: center.Z},
+						Radius: 0.2,
+						Material: geometry.Metal{A: geometry.Vector{
+							X: 0.5 * (1.0 + rand.Float64()),
+							Y: 0.5 * (1.0 + rand.Float64()),
+							Z: 0.5 * (1.0 + rand.Float64())},
+							Fuzz: 0.5 + rand.Float64()},
+					}
+
+					world.Add(&metal)
+				} else {
+					glass := shape.Sphere{
+						Center:   geometry.Vector{X: center.X, Y: center.Y, Z: center.Z},
+						Radius:   0.2,
+						Material: geometry.Dielectric{RefIndex: 1.5},
+					}
+
+					world.Add(&glass)
+				}
+			}
+		}
+	}
+
+	glass := shape.Sphere{
+		Center:   geometry.Vector{X: 0, Y: 1, Z: 0},
+		Radius:   1.0,
+		Material: geometry.Dielectric{RefIndex: 1.5},
+	}
+
+	lambertian := shape.Sphere{
+		Center: geometry.Vector{X: -4, Y: 1, Z: 0},
+		Radius: 1.0,
+		Material: geometry.Lambertian{A: geometry.Vector{
+			X: 0.4,
+			Y: 0.2,
+			Z: 0.1,
+		}},
+	}
+
+	metal := shape.Sphere{
+		Center:   geometry.Vector{X: 4, Y: 1, Z: 0},
+		Radius:   1.0,
+		Material: geometry.Metal{A: geometry.Vector{X: 0.7, Y: 0.6, Z: 0.5}, Fuzz: 0.0},
+	}
+
+	world.Add(&glass)
+	world.Add(&lambertian)
+	world.Add(&metal)
 
 	for j := ny - 1; j >= 0; j-- {
 		for i := 0; i < nx; i++ {
