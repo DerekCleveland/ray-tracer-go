@@ -59,22 +59,48 @@ func rayTracer() error {
 	c := 255.99
 	f.WriteString(fmt.Sprintf("P3\n%d %d\n255\n", nx, ny))
 
+	// Setup camera properties
+	lookFrom := geometry.Vector{X: 3, Y: 3, Z: 2}
+	lookAt := geometry.Vector{X: 0, Y: 0, Z: -1}
+	vUp := geometry.Vector{X: 0, Y: 1, Z: 0}
+	focusDist := lookFrom.Subtract(lookAt).Length()
+	aperture := 2.0
+
 	// Create a new camera
-	camera := camera.NewCamera()
+	camera := camera.NewCamera(lookFrom, lookAt, vUp, 20, float64(nx)/float64(ny), aperture, focusDist)
+
+	// // Setup red and blue sphere
+	// radius := math.Cos(math.Pi/4)
+
+	// blueSphere := shape.Sphere{
+	// 	Center: geometry.Vector{X: -radius, Y: 0, Z: -1},
+	// 	Radius: radius,
+	// 	Material: geometry.Lambertian{A: geometry.Vector{X: 0, Y: 0, Z: 1}},
+	// }
+
+	// redSphere := shape.Sphere{
+	// 	Center: geometry.Vector{X: radius, Y: 0, Z: -1},
+	// 	Radius: radius,
+	// 	Material: geometry.Lambertian{A: geometry.Vector{X: 1, Y: 0, Z: 0}},
+	// }
+	// world := geometry.World{}
+
+	// world.Add(&blueSphere)
+	// world.Add(&redSphere)
 
 	// Setup world
 	// Brownish sphere
-	sphere := shape.Sphere{
-		Center:   geometry.Vector{X: 0, Y: 0, Z: -1},
-		Radius:   0.5,
-		Material: geometry.Lambertian{A: geometry.Vector{X: 0.8, Y: 0.3, Z: 0.3}},
-	}
-	// Blue sphere
 	// sphere := shape.Sphere{
 	// 	Center:   geometry.Vector{X: 0, Y: 0, Z: -1},
 	// 	Radius:   0.5,
-	// 	Material: geometry.Lambertian{A: geometry.Vector{X: 0.1, Y: 0.2, Z: 0.5}},
+	// 	Material: geometry.Lambertian{A: geometry.Vector{X: 0.8, Y: 0.3, Z: 0.3}},
 	// }
+	// Blue sphere
+	sphere := shape.Sphere{
+		Center:   geometry.Vector{X: 0, Y: 0, Z: -1},
+		Radius:   0.5,
+		Material: geometry.Lambertian{A: geometry.Vector{X: 0.1, Y: 0.2, Z: 0.5}},
+	}
 
 	floor := shape.Sphere{
 		Center:   geometry.Vector{X: 0, Y: -100.5, Z: -1},

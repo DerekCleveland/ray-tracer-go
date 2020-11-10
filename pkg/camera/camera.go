@@ -1,6 +1,10 @@
 package camera
 
-import "ray-tracer-go/pkg/geometry"
+import (
+	"math"
+	"math/rand"
+	"ray-tracer-go/pkg/geometry"
+)
 
 // Camera defines all the vectors needed for a camera position
 type Camera struct {
@@ -8,40 +12,64 @@ type Camera struct {
 	lowerLeftCorner geometry.Vector
 	horizontal      geometry.Vector
 	vertical        geometry.Vector
+	u               geometry.Vector
+	v               geometry.Vector
+	w               geometry.Vector
+	lensRadius      float64
 }
 
-// TODO add ability to send in values to position camera at desired location
-
 // NewCamera returns a camera position at the coded coordinates
-func NewCamera() Camera {
+func NewCamera(lookFrom geometry.Vector, lookAt geometry.Vector, vUp geometry.Vector, vfov float64, aspect float64, aperture float64, focusDist float64) Camera {
 	c := Camera{}
 
-	c.origin = geometry.Vector{0.0, 0.0, 0.0}
-	c.lowerLeftCorner = geometry.Vector{-2.0, -1.0, -1.0}
-	c.horizontal = geometry.Vector{4.0, 0.0, 0.0}
-	c.vertical = geometry.Vector{0.0, 2.0, 0.0}
+	c.origin = lookFrom
+	c.lensRadius = aperture / 2
+
+	theta := vfov * math.Pi / 180
+	halfHeight := math.Tan(theta / 2)
+	halfWidth := aspect * halfHeight
+
+	w := lookFrom.Subtract(lookAt).Normalize()
+	u := vUp.Cross(w).Normalize()
+	v := w.Cross(u)
+
+	x := u.Scale(halfWidth * focusDist)
+	y := v.Scale(halfHeight * focusDist)
+
+	c.lowerLeftCorner = c.origin.Subtract(x).Subtract(y).Subtract(w.Scale(focusDist))
+	c.horizontal = x.Scale(2)
+	c.vertical = y.Scale(2)
+
+	c.w = w
+	c.u = u
+	c.v = v
 
 	return c
 }
 
-func (c Camera) position(u float64, v float64) geometry.Vector {
-	horizontal := c.horizontal.Scale(u)
-	vertical := c.vertical.Scale(v)
-
-	return horizontal.Add(vertical)
-}
-
-func (c Camera) direction(position geometry.Vector) geometry.Vector {
-	return c.lowerLeftCorner.Add(position)
-}
-
 // RayAt returns the position of a ray for a given position
-func (c Camera) RayAt(u float64, v float64) geometry.Ray {
-	position := c.position(u, v)
-	direction := c.direction(position)
+func (c Camera) RayAt(s float64, t float64) geometry.Ray {
+	rd := randomInUnitDisc().Scale(c.lensRadius)
+	offset := c.u.Scale(rd.X).Add(c.v.Scale(rd.Y))
+
+	horizontal := c.horizontal.Scale(s)
+	vertical := c.vertical.Scale(t)
+
+	origin := c.origin.Add(offset)
+	direction := c.lowerLeftCorner.Add(horizontal).Add(vertical).Subtract(origin)
 
 	return geometry.Ray{
-		Origin:    c.origin,
+		Origin:    origin,
 		Direction: direction,
+	}
+}
+
+func randomInUnitDisc() geometry.Vector {
+	var p geometry.Vector
+	for {
+		p = geometry.Vector{X: rand.Float64(), Y: rand.Float64(), Z: 0}.Scale(2).Subtract(geometry.Vector{X: 1, Y: 1, Z: 0})
+		if p.Dot(p) < 1.0 {
+			return p
+		}
 	}
 }
