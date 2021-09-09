@@ -5,7 +5,7 @@ import (
 	"ray-tracer-go/pkg/geometry"
 )
 
-// Sphere defines a sphere object in 3d space that implemnts shape and has a center and radius
+// Sphere defines a sphere object in 3d space that implements shape and has a center and radius
 type Sphere struct {
 	Center geometry.Vector
 	Radius float64
