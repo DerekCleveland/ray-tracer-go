@@ -16,7 +16,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	log.Println("⌛️ Finished ray tracer")
+	log.Println("✅ Finished ray tracer")
 }
 
 func rayTracer() error {
